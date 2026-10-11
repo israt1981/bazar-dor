@@ -1,69 +1,152 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Product } from "@/types";
 
 export default function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://openapi.programming-hero.com/api/bazardor/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.data) {
+          setProducts(data.data);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Sort products to find top risers and fallers
+  const sortedByChange = [...products].sort((a, b) => (b.change || 0) - (a.change || 0));
+  const topRisers = sortedByChange.slice(0, 6);
+  const topFallers = [...products].sort((a, b) => (a.change || 0) - (b.change || 0)).slice(0, 6);
+
+  const scrollToAllProducts = () => {
+    const section = document.getElementById("সব-পণ্য");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-12">
+      {/* 2. Hero / Banner Section */}
+      <section className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="space-y-4 max-w-2xl">
+          <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider">
+            বাজার দর আপডেট
+          </span>
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-800 leading-tight">
+            আজকের বাজারের দাম এক নজরে
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+            চাল, ডাল, তেল, সবজি, মাছ, মাংস ও মসলার আজকের বাজারদর — প্রাত্যহিক বাজারভিত্তিক দাম, সামঞ্জস্যপূর্ণ তুলনা ও সঠিক তথ্য।
           </p>
+          <div>
+            <button
+              onClick={scrollToAllProducts}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow transition"
+            >
+              সব পণ্য দেখুন
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex-shrink-0">
+          <div className="w-48 h-48 md:w-64 md:h-64 bg-emerald-100 rounded-full flex items-center justify-center text-7xl md:text-8xl shadow-inner">
+            🧺
+          </div>
         </div>
-      </main>
+      </section>
+
+      {loading ? (
+        // Loading Skeletons
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 animate-pulse h-48"></div>
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Section A — আজ দাম বেড়েছে ▲ */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-emerald-600">▲</span> আজ দাম বেড়েছে
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topRisers.map((prod) => (
+                <ProductCard key={prod.id} product={prod} />
+              ))}
+            </div>
+          </section>
+
+          {/* Section B — আজ দাম কমেছে ▼ */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-red-600">▼</span> আজ দাম কমেছে
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topFallers.map((prod) => (
+                <ProductCard key={prod.id} product={prod} />
+              ))}
+            </div>
+          </section>
+
+          {/* Section C — সব পণ্য */}
+          <section id="সব-পণ্য" className="space-y-6 pt-6">
+            <div className="border-b border-gray-200 pb-3">
+              <h2 className="text-2xl font-bold text-gray-800">সব পণ্য</h2>
+              <p className="text-sm text-gray-500">সকল নিত্যপ্রয়োজনীয় পণ্যের তালিকা ও বর্তমান বাজারমূল্য</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((prod) => (
+                <ProductCard key={prod.id} product={prod} />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
+  );
+}
+
+// Reusable Product Card Component
+function ProductCard({ product }: { product: Product }) {
+  const isUp = (product.change || 0) >= 0;
+  
+  return (
+    <Link
+      href={`/product/${product.id}`}
+      className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition flex flex-col justify-between group"
+    >
+      <div>
+        <div className="flex items-start justify-between mb-3">
+          <span className="text-3xl bg-gray-50 p-2 rounded-lg group-hover:scale-110 transition">
+            {product.emoji || "📦"}
+          </span>
+          <span
+            className={`text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-0.5 ${
+              isUp ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+            }`}
+          >
+            {isUp ? "▲" : "▼"} {Math.abs(product.change || 0)}%
+          </span>
+        </div>
+        <h3 className="font-semibold text-gray-800 text-base mb-1 group-hover:text-emerald-600 transition">
+          {product.name}
+        </h3>
+        <p className="text-xs text-gray-500">প্রতি {product.unit}</p>
+      </div>
+      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+        <span className="text-xs text-gray-500">আজকের দাম</span>
+        <span className="font-bold text-gray-800 text-sm">{product.price} টাকা</span>
+      </div>
+    </Link>
   );
 }
