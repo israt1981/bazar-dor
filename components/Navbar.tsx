@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { User, LogOut } from "lucide-react";
+import { Product } from "@/types";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [categories, setCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -126,7 +127,7 @@ export default function Navbar() {
 
       {/* Price Ticker / Marquee */}
       <div className="bg-emerald-50 border-t border-b border-emerald-100 overflow-hidden py-2">
-        <div className="flex whitespace-nowrap animate-pulse items-center gap-8 text-xs text-gray-700 overflow-x-auto">
+        <div className="flex whitespace-nowrap items-center gap-8 text-xs text-gray-700 overflow-x-auto">
           {products.map((prod, idx) => {
             const isUp = (prod.change || 0) >= 0;
             return (

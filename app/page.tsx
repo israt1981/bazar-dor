@@ -23,7 +23,6 @@ export default function Home() {
       });
   }, []);
 
-  // Sort products to find top risers and fallers
   const sortedByChange = [...products].sort((a, b) => (b.change || 0) - (a.change || 0));
   const topRisers = sortedByChange.slice(0, 6);
   const topFallers = [...products].sort((a, b) => (a.change || 0) - (b.change || 0)).slice(0, 6);
@@ -37,7 +36,6 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-12">
-      {/* 2. Hero / Banner Section */}
       <section className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="space-y-4 max-w-2xl">
           <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -58,7 +56,7 @@ export default function Home() {
             </button>
           </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <div className="w-48 h-48 md:w-64 md:h-64 bg-emerald-100 rounded-full flex items-center justify-center text-7xl md:text-8xl shadow-inner">
             🧺
           </div>
@@ -66,7 +64,6 @@ export default function Home() {
       </section>
 
       {loading ? (
-        // Loading Skeletons
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 animate-pulse h-48"></div>
@@ -74,7 +71,6 @@ export default function Home() {
         </div>
       ) : (
         <>
-          {/* Section A — আজ দাম বেড়েছে ▲ */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <span className="text-emerald-600">▲</span> আজ দাম বেড়েছে
@@ -86,7 +82,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Section B — আজ দাম কমেছে ▼ */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <span className="text-red-600">▼</span> আজ দাম কমেছে
@@ -98,7 +93,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Section C — সব পণ্য */}
           <section id="সব-পণ্য" className="space-y-6 pt-6">
             <div className="border-b border-gray-200 pb-3">
               <h2 className="text-2xl font-bold text-gray-800">সব পণ্য</h2>
@@ -116,7 +110,6 @@ export default function Home() {
   );
 }
 
-// Reusable Product Card Component
 function ProductCard({ product }: { product: Product }) {
   const isUp = (product.change || 0) >= 0;
   
