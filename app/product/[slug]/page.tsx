@@ -13,9 +13,8 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
     fetch(`https://openapi.programming-hero.com/api/bazardor/products/${slug}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data?.data) {
-          setProduct(data.data);
-        }
+        const prodData = data?.data || data;
+        setProduct(prodData);
         setLoading(false);
       })
       .catch((err) => {
@@ -33,18 +32,48 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
     );
   }
 
-  if (!product) {
+  if (!product || !product.nameBn) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-20 text-center space-y-4">
         <h2 className="text-2xl font-bold text-gray-800">পণ্যটি পাওয়া যায়নি</h2>
-        <Link href="/" className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-medium inline-block">
+        <Link href="/" className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-medium inline-block shadow-sm">
           হোম পেজে ফিরে যান
         </Link>
       </div>
     );
   }
 
-  const isUp = (product.change || 0) >= 0;
+  const dir = product.change?.dir || "flat";
+  const pct = product.change?.pct || 0;
+  let badgeColor = "text-gray-600";
+  let symbol = "—";
+  if (dir === "up") {
+    badgeColor = "text-emerald-600";
+    symbol = "▲";
+  } else if (dir === "down") {
+    badgeColor = "text-red-600";
+    symbol = "▼";
+  }
+
+  const formatUnit = (u: string) => {
+    switch (u) {
+      case "kg": return "কেজি";
+      case "litre": return "লিটার";
+      case "dozen": return "ডজন";
+      case "piece": return "পিস";
+      default: return u;
+    }
+  };
+
+  // Calculate Min, Max, and Avg prices from markets list if available
+  const marketList = product.markets || [];
+  const allMins = marketList.map((m) => m.min);
+  const allMaxs = marketList.map((m) => m.max);
+  const minPrice = allMins.length > 0 ? Math.min(...allMins) : Math.round(product.today * 0.95);
+  const maxPrice = allMaxs.length > 0 ? Math.max(...allMaxs) : Math.round(product.today * 1.05);
+  const avgPrice = marketList.length > 0 
+    ? Math.round(marketList.reduce((acc, m) => acc + (m.min + m.max) / 2, 0) / marketList.length)
+    : product.today;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
@@ -52,26 +81,26 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
       <div className="text-xs text-gray-500 flex items-center gap-2">
         <Link href="/" className="hover:text-emerald-600">হোম</Link>
         <span>/</span>
-        <span className="text-gray-800 font-medium">{product.name}</span>
+        <span className="text-gray-800 font-medium">{product.nameBn}</span>
       </div>
 
       {/* Top Summary Card */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <span className="text-6xl bg-emerald-50 p-4 rounded-2xl">{product.emoji || "📦"}</span>
+          <span className="text-6xl bg-emerald-50 p-4 rounded-2xl">{product.image || "📦"}</span>
           <div className="space-y-1">
             <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full">
-              {product.category}
+              {product.categoryNameBn || product.category}
             </span>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{product.name}</h1>
-            <p className="text-sm text-gray-500">প্রতি {product.unit}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.nameBn}</h1>
+            <p className="text-sm text-gray-500">প্রতি {formatUnit(product.unit)}</p>
           </div>
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500">আজকের গড় মূল্য</p>
-          <div className="text-2xl font-bold text-gray-900">{product.price} টাকা</div>
-          <span className={`text-xs font-semibold inline-flex items-center gap-0.5 mt-1 ${isUp ? "text-emerald-600" : "text-red-600"}`}>
-            {isUp ? "▲" : "▼"} {Math.abs(product.change || 0)}%
+          <div className="text-2xl font-bold text-gray-900">{product.today} টাকা</div>
+          <span className={`text-xs font-semibold inline-flex items-center gap-0.5 mt-1 ${badgeColor}`}>
+            {symbol} {Math.abs(pct)}%
           </span>
         </div>
       </div>
@@ -79,16 +108,16 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
       {/* Price Statistics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          সবনিম্ন মূল্য
-          <div className="text-lg font-bold text-emerald-700 mt-1">{product.minPrice || Math.round(product.price * 0.95)} টাকা</div>
+          <span className="text-xs text-gray-500">সবনিম্ন মূল্য</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{minPrice} টাকা</div>
         </div>
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          সর্বোচ্চ মূল্য
-          <div className="text-lg font-bold text-emerald-700 mt-1">{product.maxPrice || Math.round(product.price * 1.05)} টাকা</div>
+          <span className="text-xs text-gray-500">সর্বোচ্চ মূল্য</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{maxPrice} টাকা</div>
         </div>
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          গড় মূল্য
-          <div className="text-lg font-bold text-emerald-700 mt-1">{product.avgPrice || product.price} টাকা</div>
+          <span className="text-xs text-gray-500">গড় বাজারদর</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{avgPrice} টাকা</div>
         </div>
       </div>
 
@@ -103,29 +132,29 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
               <tr>
                 <th className="px-6 py-3">বাজারের নাম</th>
                 <th className="px-6 py-3">স্থান</th>
-                <th className="px-6 py-3">মূল্য</th>
+                <th className="px-6 py-3">সর্বনিম্ন মূল্য</th>
+                <th className="px-6 py-3">সর্বোচ্চ মূল্য</th>
                 <th className="px-6 py-3">অবস্থা</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              <tr>
-                <td className="px-6 py-4 font-medium text-gray-800">কারওয়ান বাজার</td>
-                <td className="px-6 py-4">ঢাকা</td>
-                <td className="px-6 py-4 font-semibold text-gray-900">{product.price} টাকা</td>
-                <td className="px-6 py-4 text-emerald-600 font-medium">উপলব্ধ</td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 font-medium text-gray-800">নিউ মার্কেট কাঁচাবাজার</td>
-                <td className="px-6 py-4">ঢাকা</td>
-                <td className="px-6 py-4 font-semibold text-gray-900">{Math.round(product.price * 1.02)} টাকা</td>
-                <td className="px-6 py-4 text-emerald-600 font-medium">উপলব্ধ</td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 font-medium text-gray-800">টঙ্গী বাজার</td>
-                <td className="px-6 py-4">গাজীপুর</td>
-                <td className="px-6 py-4 font-semibold text-gray-900">{Math.round(product.price * 0.98)} টাকা</td>
-                <td className="px-6 py-4 text-emerald-600 font-medium">উপলব্ধ</td>
-              </tr>
+              {marketList.length > 0 ? (
+                marketList.map((m, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50 transition">
+                    <td className="px-6 py-4 font-medium text-gray-900">{m.market}</td>
+                    <td className="px-6 py-4">{m.division}</td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">{m.min} টাকা</td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">{m.max} টাকা</td>
+                    <td className="px-6 py-4 text-emerald-600 font-medium">উপলব্ধ</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-6 text-center text-gray-400">
+                    বাজারভিত্তিক ডেটা উপলব্ধ নেই
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

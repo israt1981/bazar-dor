@@ -1,19 +1,35 @@
+export interface Market {
+  market: string;
+  division: string;
+  min: number;
+  max: number;
+}
+
+export interface PriceChange {
+  dir: "up" | "down" | "flat";
+  pct: number;
+}
+
 export interface Product {
-  id: string | number;
-  name: string;
+  id: number | string;
+  slug: string;
+  nameBn: string;
   category: string;
+  categoryNameBn: string;
+  categoryIcon: string;
   unit: string;
-  price: number;
-  change: number; // e.g. 2.1 for +2.1%, -2.9 for -2.9%
-  emoji: string;
-  minPrice?: number;
-  maxPrice?: number;
-  avgPrice?: number;
+  image: string;
+  today: number;
+  yesterday: number;
+  lastWeek: number;
+  lastMonth: number;
+  change: PriceChange;
+  markets?: Market[];
 }
 
 export interface Category {
   id: string;
-  name: string;
   slug: string;
-  icon?: string;
+  nameBn: string;
+  icon: string;
 }

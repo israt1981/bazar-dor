@@ -4,32 +4,44 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { User, LogOut } from "lucide-react";
-import { Product } from "@/types";
+import { Product, Category } from "@/types";
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const [categories, setCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const pathname = usePathname() || "/";
+  const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const banglaDate = "রবিবার, ৭ অক্টোবর, ২০২৬"; // Match Figma format
+  const banglaDate = "রবিবার, ৭ অক্টোবর, ২০২৬";
 
   useEffect(() => {
     fetch("https://openapi.programming-hero.com/api/bazardor/categories")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.data) setCategories(data.data);
+        const catList = Array.isArray(data) ? data : data?.data || [];
+        setCategories(catList);
       })
       .catch((err) => console.error("Error fetching categories:", err));
 
     fetch("https://openapi.programming-hero.com/api/bazardor/products")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.data) setProducts(data.data);
+        const prodList = Array.isArray(data) ? data : data?.data || [];
+        setProducts(prodList);
       })
       .catch((err) => console.error("Error fetching products:", err));
   }, []);
+
+  const formatUnit = (u: string) => {
+    switch (u) {
+      case "kg": return "কেজি";
+      case "litre": return "লিটার";
+      case "dozen": return "ডজন";
+      case "piece": return "পিস";
+      default: return u;
+    }
+  };
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-50">
@@ -96,15 +108,15 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Second Row: Category Navigation Links */}
-      <nav className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-6 overflow-x-auto text-sm font-medium text-gray-600">
+      {/* Second Row: Category Navigation Links with Icons */}
+      <nav className="max-w-7xl mx-auto px-4 py-2.5 flex items-center gap-6 overflow-x-auto text-sm font-medium text-gray-600">
         <Link
           href="/"
-          className={`whitespace-nowrap pb-1 ${
+          className={`whitespace-nowrap pb-1 flex items-center gap-1.5 ${
             pathname === "/" ? "text-emerald-600 border-b-2 border-emerald-600 font-semibold" : "hover:text-emerald-600"
           }`}
         >
-          হোম
+          <span>🏠</span> হোম
         </Link>
         {categories.map((cat) => {
           const catPath = `/category/${cat.slug}`;
@@ -113,30 +125,42 @@ export default function Navbar() {
             <Link
               key={cat.id || cat.slug}
               href={catPath}
-              className={`whitespace-nowrap pb-1 transition ${
+              className={`whitespace-nowrap pb-1 transition flex items-center gap-1.5 ${
                 isActive
                   ? "text-emerald-600 border-b-2 border-emerald-600 font-semibold"
                   : "hover:text-emerald-600"
               }`}
             >
-              {cat.name}
+              <span>{cat.icon}</span> {cat.nameBn}
             </Link>
           );
         })}
       </nav>
 
-      {/* Price Ticker / Marquee */}
-      <div className="bg-emerald-50 border-t border-b border-emerald-100 overflow-hidden py-2">
-        <div className="flex whitespace-nowrap items-center gap-8 text-xs text-gray-700 overflow-x-auto">
-          {products.map((prod, idx) => {
-            const isUp = (prod.change || 0) >= 0;
+      {/* Price Ticker / Infinite Marquee */}
+      <div className="bg-emerald-50 border-t border-b border-emerald-100 overflow-hidden py-2 relative flex items-center">
+        <div className="flex whitespace-nowrap animate-marquee items-center gap-12 text-xs text-gray-700">
+          {/* Render products twice to create seamless infinite loop effect */}
+          {[...products, ...products].map((prod, idx) => {
+            const dir = prod.change?.dir || "flat";
+            const pct = prod.change?.pct || 0;
+            let symbol = "—";
+            let colorClass = "text-gray-600 font-semibold";
+            if (dir === "up") {
+              symbol = "▲";
+              colorClass = "text-emerald-600 font-semibold";
+            } else if (dir === "down") {
+              symbol = "▼";
+              colorClass = "text-red-600 font-semibold";
+            }
+
             return (
-              <div key={idx} className="flex items-center gap-1.5 px-2">
-                <span>{prod.emoji || "📦"}</span>
-                <span className="font-medium">{prod.name}</span>
-                <span>{prod.price} টাকা/{prod.unit}</span>
-                <span className={isUp ? "text-emerald-600 font-semibold" : "text-red-600 font-semibold"}>
-                  {isUp ? "▲" : "▼"} {Math.abs(prod.change || 0)}%
+              <div key={idx} className="flex items-center gap-1.5 px-3">
+                <span>{prod.image || "📦"}</span>
+                <span className="font-medium">{prod.nameBn}</span>
+                <span>{prod.today} টাকা/{formatUnit(prod.unit)}</span>
+                <span className={colorClass}>
+                  {symbol} {Math.abs(pct)}%
                 </span>
               </div>
             );
