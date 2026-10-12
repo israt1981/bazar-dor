@@ -1,30 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function UpdateProfilePage() {
   const router = useRouter();
-  const [name, setName] = useState("Mohammad Israt Hossain");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("bazardor_logged_in_user");
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      setName(parsed.name || "");
+    }
+  }, []);
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) {
-      toast.error("নাম খালি রাখা যাবে না");
+    if (!name.trim()) {
+      toast.error("নাম খালি রাখা যাবে না।");
       return;
     }
-    toast.success("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
-    setTimeout(() => {
+
+    setLoading(true);
+
+    try {
+      const userData = localStorage.getItem("bazardor_logged_in_user");
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        const updatedUser = { ...parsed, name };
+        
+        // Update session storage
+        localStorage.setItem("bazardor_logged_in_user", JSON.stringify(updatedUser));
+        
+        // Dispatch auth change so Navbar reflects new name instantly
+        window.dispatchEvent(new Event("auth-change"));
+      }
+
+      setLoading(false);
+      toast.success("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
       router.push("/profile");
-    }, 1000);
+    } catch {
+      setLoading(false);
+      toast.error("আপডেট করতে সমস্যা হয়েছে।");
+    }
   };
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">
-      <Toaster position="top-center" />
       <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
-        <h1 className="text-xl font-bold text-gray-800 text-center">প্রোফাইল তথ্য আপডেট</h1>
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold text-gray-900">প্রোফাইল আপডেট করুন</h1>
+          <p className="text-xs text-gray-500">আপনার নাম পরিবর্তন করুন</p>
+        </div>
+
         <form onSubmit={handleUpdate} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">নাম</label>
@@ -32,16 +64,25 @@ export default function UpdateProfilePage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="আপনার নতুন নাম"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
             />
           </div>
+
           <button
             type="submit"
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition shadow-sm"
+            disabled={loading}
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm shadow transition cursor-pointer"
           >
-            আপডেট ইনফরমেশন
+            {loading ? "আপডেট হচ্ছে..." : "তথ্য আপডেট করুন"}
           </button>
         </form>
+
+        <div className="text-center pt-2">
+          <Link href="/profile" className="text-xs text-gray-500 hover:text-emerald-600 transition">
+            ← প্রোফাইলে ফিরে যান
+          </Link>
+        </div>
       </div>
     </div>
   );

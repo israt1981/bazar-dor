@@ -1,15 +1,24 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Suspense } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Product } from "@/types";
 
-export default function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check authentication (using localStorage as a simple check for BetterAuth/Session state)
+    const authStatus = localStorage.getItem("bazardor_logged_in");
+    if (!authStatus) {
+      router.push("/signin");
+      return;
+    }
+
     fetch(`https://openapi.programming-hero.com/api/bazardor/products/${slug}`)
       .then((res) => res.json())
       .then((data) => {
@@ -21,7 +30,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
         console.error("Error fetching product details:", err);
         setLoading(false);
       });
-  }, [slug]);
+  }, [slug, router]);
 
   if (loading) {
     return (
@@ -65,7 +74,6 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
     }
   };
 
-  // Calculate Min, Max, and Avg prices from markets list if available
   const marketList = product.markets || [];
   const allMins = marketList.map((m) => m.min);
   const allMaxs = marketList.map((m) => m.max);
@@ -77,14 +85,12 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      {/* Breadcrumb */}
       <div className="text-xs text-gray-500 flex items-center gap-2">
         <Link href="/" className="hover:text-emerald-600">হোম</Link>
         <span>/</span>
         <span className="text-gray-800 font-medium">{product.nameBn}</span>
       </div>
 
-      {/* Top Summary Card */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
         <div className="flex items-center gap-4">
           <span className="text-6xl bg-emerald-50 p-4 rounded-2xl">{product.image || "📦"}</span>
@@ -105,10 +111,9 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
         </div>
       </div>
 
-      {/* Price Statistics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          <span className="text-xs text-gray-500">সবনিম্ন মূল্য</span>
+          <span className="text-xs text-gray-500">সর্বনিম্ন মূল্য</span>
           <div className="text-lg font-bold text-emerald-700 mt-1">{minPrice} টাকা</div>
         </div>
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
@@ -121,7 +126,6 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
         </div>
       </div>
 
-      {/* Bazar-wise Breakdown Table */}
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="p-4 bg-gray-50 border-b border-gray-200 font-bold text-gray-800">
           বাজারভিত্তিক আজকের দাম
@@ -160,5 +164,13 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ slug:
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+  return (
+    <Suspense fallback={<div className="p-12 text-center text-gray-500">লোড হচ্ছে...</div>}>
+      <ProductDetailsContent params={params} />
+    </Suspense>
   );
 }

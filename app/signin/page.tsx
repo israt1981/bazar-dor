@@ -3,104 +3,150 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+
+interface UserType {
+  name: string;
+  email: string;
+  password?: string;
+}
 
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email || !password) {
-      toast.error("অনুগ্রহ করে সকল ফিল্ড পূরণ করুন");
+      toast.error("দয়া করে ইমেইল এবং পাসওয়ার্ড প্রদান করুন।");
       return;
     }
-    // Simulate successful login for assignment flow
-    toast.success(" সফলভাবে সাইন ইন হয়েছে!");
-    setTimeout(() => {
-      router.push("/");
-    }, 1000);
+
+    setLoading(true);
+
+    try {
+      const existingUsers: UserType[] = JSON.parse(
+        localStorage.getItem("bazardor_users") || "[]"
+      );
+      const foundUser = existingUsers.find(
+        (u: UserType) => u.email === email && u.password === password
+      );
+
+      if (foundUser) {
+        localStorage.setItem("bazardor_logged_in", "true");
+        localStorage.setItem("bazardor_logged_in_user", JSON.stringify(foundUser));
+        
+        window.dispatchEvent(new Event("auth-change"));
+
+        setLoading(false);
+        toast.success(`স্বাগতম, ${foundUser.name}! সফলভাবে লগইন হয়েছে।`);
+        router.push("/");
+      } else {
+        setLoading(false);
+        toast.error("ভুল ইমেইল অথবা পাসওয়ার্ড! সঠিক তথ্য দিন বা সাইন আপ করুন।");
+      }
+    } catch {
+      setLoading(false);
+      toast.error("লগইন করতে সমস্যা হয়েছে।");
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    toast.success(`${provider} দিয়ে সফলভাবে লগইন হয়েছে!`);
+  const handleSocialAuth = (provider: string) => {
+    setLoading(true);
     setTimeout(() => {
+      setLoading(false);
+      const socialUser: UserType = {
+        name: `${provider} User`,
+        email: `user@${provider.toLowerCase()}.com`,
+      };
+      localStorage.setItem("bazardor_logged_in_user", JSON.stringify(socialUser));
+      localStorage.setItem("bazardor_logged_in", "true");
+
+      window.dispatchEvent(new Event("auth-change"));
+
+      toast.success(`${provider} দিয়ে সফলভাবে লগইন হয়েছে!`);
       router.push("/");
-    }, 1000);
+    }, 800);
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <Toaster position="top-center" />
+    <div className="max-w-md mx-auto px-4 py-12">
       <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-gray-800">সাইন ইন</h1>
-          <p className="text-xs text-gray-500">বিস্তারিত নাম, বাজার তুলনা ও প্রোফাইল দেখতে অ্যাকাউন্টে ঢুকুন[cite: 2]।</p>
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold text-gray-900">সাইন ইন</h1>
+          <p className="text-xs text-gray-500">আপনার বাজার দর অ্যাকাউন্টে প্রবেশ করুন</p>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">ইমেইল</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="habibutsho.ph@gmail.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="you@example.com"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
             />
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="••••••••"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
             />
           </div>
+
           <button
             type="submit"
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition shadow-sm"
+            disabled={loading}
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm shadow transition flex items-center justify-center cursor-pointer"
           >
-            সাইন ইন
+            {loading ? "লগইন হচ্ছে..." : "লগ ইন"}
           </button>
         </form>
 
         <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-gray-200"></div>
-          <span className="flex-shrink mx-4 text-xs text-gray-400">অথবা</span>
-          <div className="flex-grow border-t border-gray-200"></div>
+          <div className="flex-1 border-t border-gray-200"></div>
+          <span className="mx-4 text-xs text-gray-400">অথবা</span>
+          <div className="flex-1 border-t border-gray-200"></div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => handleSocialLogin("Google")}
-            className="w-full border border-gray-300 py-2 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
+            type="button"
+            onClick={() => handleSocialAuth("Google")}
+            className="py-2.5 px-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            Google দিয়ে চালিয়ে যান
+            Google
           </button>
           <button
-            onClick={() => handleSocialLogin("GitHub")}
-            className="w-full border border-gray-300 py-2 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
+            type="button"
+            onClick={() => handleSocialAuth("GitHub")}
+            className="py-2.5 px-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            GitHub দিয়ে চালিয়ে যান
+            GitHub
           </button>
         </div>
 
-        <div className="text-center text-xs text-gray-500 pt-2">
-          অ্যাকাউন্ট নেই?{" "}
+        <p className="text-center text-xs text-gray-500 pt-2">
+          কোনো অ্যাকাউন্ট নেই?{" "}
           <Link href="/signup" className="text-emerald-600 font-semibold hover:underline">
             সাইন আপ করুন
           </Link>
-        </div>
+        </p>
+      </div>
 
-        <div className="text-center pt-2">
-          <Link href="/" className="text-xs text-gray-400 hover:underline">
-            ← হোম পেজে ফিরে যান
-          </Link>
-        </div>
+      <div className="text-center mt-6">
+        <Link href="/" className="text-xs text-gray-500 hover:text-emerald-600 transition">
+          ← হোম পেজে ফিরে যান
+        </Link>
       </div>
     </div>
   );

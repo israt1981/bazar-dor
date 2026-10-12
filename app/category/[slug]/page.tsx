@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState, use, Suspense } from "react";
 import Link from "next/link";
 import { Product, Category } from "@/types";

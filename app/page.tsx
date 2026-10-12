@@ -2,13 +2,28 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Product } from "@/types";
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [banglaDate, setBanglaDate] = useState("রবিবার, ১১ অক্টোবর, ২০২৬");
 
   useEffect(() => {
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    try {
+      const formatted = new Intl.DateTimeFormat("bn-BD", options).format(new Date());
+      setBanglaDate(formatted);
+    } catch (e) {
+      console.error(e);
+    }
+
     fetch("https://openapi.programming-hero.com/api/bazardor/products")
       .then((res) => res.json())
       .then((data) => {
@@ -35,10 +50,11 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-12 bg-white text-gray-800 min-h-screen">
+      {/* Hero / Banner Section */}
       <section className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="space-y-4 max-w-2xl">
           <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider">
-            বাজার দর আপডেট
+            {banglaDate}
           </span>
           <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
             আজকের বাজারের দাম এক নজরে
@@ -55,9 +71,18 @@ export default function Home() {
             </button>
           </div>
         </div>
+        
+        {/* Replaced Bucket Emoji with bazar-hero.png */}
         <div className="shrink-0">
-          <div className="w-48 h-48 md:w-64 md:h-64 bg-emerald-100 rounded-full flex items-center justify-center text-7xl md:text-8xl shadow-inner">
-            🧺
+          <div className="w-56 h-56 md:w-72 md:h-72 bg-emerald-100/70 rounded-full flex items-center justify-center p-4 shadow-inner">
+            <Image
+              src="/bazar-hero.png"
+              alt="Bazar Hero"
+              width={260}
+              height={260}
+              className="object-contain"
+              priority
+            />
           </div>
         </div>
       </section>
@@ -70,6 +95,7 @@ export default function Home() {
         </div>
       ) : (
         <>
+          {/* Section A — আজ দাম বেড়েছে ▲ */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <span className="text-emerald-600">▲</span> আজ দাম বেড়েছে
@@ -81,6 +107,7 @@ export default function Home() {
             </div>
           </section>
 
+          {/* Section B — আজ দাম কমেছে ▼ */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <span className="text-red-600">▼</span> আজ দাম কমেছে
@@ -92,6 +119,7 @@ export default function Home() {
             </div>
           </section>
 
+          {/* Section C — সব পণ্য */}
           <section id="সব-পণ্য" className="space-y-6 pt-6">
             <div className="border-b border-gray-200 pb-3">
               <h2 className="text-2xl font-bold text-gray-900">সব পণ্য</h2>

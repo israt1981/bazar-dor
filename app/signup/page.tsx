@@ -3,80 +3,182 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+
+interface UserType {
+  name: string;
+  email: string;
+  password?: string;
+}
 
 export default function SignUpPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) {
-      toast.error("অনুগ্রহ করে সকল ফিল্ড পূরণ করুন");
+
+    if (!name || !email || !password || !confirmPassword) {
+      toast.error("দয়া করে সব ফিল্ড সঠিকভাবে পূরণ করুন।");
       return;
     }
-    toast.success("সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে!");
-    setTimeout(() => {
+
+    if (password.length < 8) {
+      toast.error("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("পাসওয়ার্ড মিলছে না!");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const existingUsers: UserType[] = JSON.parse(
+        localStorage.getItem("bazardor_users") || "[]"
+      );
+      
+      const userExists = existingUsers.some((u: UserType) => u.email === email);
+      if (userExists) {
+        toast.error("এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে!");
+        setLoading(false);
+        return;
+      }
+
+      const newUser: UserType = { name, email, password };
+      existingUsers.push(newUser);
+      localStorage.setItem("bazardor_users", JSON.stringify(existingUsers));
+
+      setLoading(false);
+      toast.success("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! অনুগ্রহ করে সাইন ইন করুন।");
       router.push("/signin");
-    }, 1000);
+    } catch {
+      setLoading(false);
+      toast.error("রেজিস্ট্রেশনে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    }
+  };
+
+  const handleSocialAuth = (provider: string) => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      const socialUser: UserType = {
+        name: `${provider} User`,
+        email: `user@${provider.toLowerCase()}.com`,
+      };
+      localStorage.setItem("bazardor_logged_in_user", JSON.stringify(socialUser));
+      localStorage.setItem("bazardor_logged_in", "true");
+
+      window.dispatchEvent(new Event("auth-change"));
+
+      toast.success(`${provider} দিয়ে সফলভাবে সাইন আপ সম্পন্ন হয়েছে!`);
+      router.push("/");
+    }, 800);
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <Toaster position="top-center" />
+    <div className="max-w-md mx-auto px-4 py-12">
       <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-gray-800">অ্যাকাউন্ট তৈরি করুন</h1>
-          <p className="text-xs text-gray-500">বাজার দর অ্যাপে নতুন অ্যাকাউন্ট নিবন্ধন করুন।</p>
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold text-gray-900">অ্যাকাউন্ট তৈরি করুন</h1>
+          <p className="text-xs text-gray-500">বিনামূল্যে সাইন আপ করে সব বিস্তারিত দাম দেখুন।</p>
         </div>
 
-        <form onSubmit={handleSignUp} className="space-y-4">
+        <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">নাম</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="আপনার নাম"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="যেমন: রহিম উদ্দিন"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
             />
           </div>
+
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">ইমেইল</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="habibutsho.ph@gmail.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="you@example.com"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
             />
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="কমপক্ষে ৮ অক্ষর"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
             />
           </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড নিশ্চিত করুন</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="আবার লিখুন"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
+            />
+          </div>
+
           <button
             type="submit"
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition shadow-sm"
+            disabled={loading}
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm shadow transition flex items-center justify-center cursor-pointer"
           >
-            রেজিস্ট্রেশন করুন
+            {loading ? "লোড হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}
           </button>
         </form>
 
-        <div className="text-center text-xs text-gray-500 pt-2">
-          ইতিমধ্যে অ্যাকাউন্ট আছে?{" "}
+        <div className="relative flex py-2 items-center">
+          <div className="flex-1 border-t border-gray-200"></div>
+          <span className="mx-4 text-xs text-gray-400">অথবা</span>
+          <div className="flex-1 border-t border-gray-200"></div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => handleSocialAuth("Google")}
+            className="py-2.5 px-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Google
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSocialAuth("GitHub")}
+            className="py-2.5 px-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            GitHub
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-gray-500 pt-2">
+          অ্যাকাউন্ট আছে?{" "}
           <Link href="/signin" className="text-emerald-600 font-semibold hover:underline">
             সাইন ইন করুন
           </Link>
-        </div>
+        </p>
+      </div>
+
+      <div className="text-center mt-6">
+        <Link href="/" className="text-xs text-gray-500 hover:text-emerald-600 transition">
+          ← হোম পেজে ফিরে যান
+        </Link>
       </div>
     </div>
   );
