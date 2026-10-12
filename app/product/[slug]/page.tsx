@@ -4,6 +4,7 @@ import { useEffect, useState, use, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types";
+import { authClient } from "@/lib/auth-client";
 
 function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -11,10 +12,15 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // BetterAuth session hook to check real session status
+  const { data: session, isPending } = authClient.useSession();
+
   useEffect(() => {
-    // Check authentication (using localStorage as a simple check for BetterAuth/Session state)
-    const authStatus = localStorage.getItem("bazardor_logged_in");
-    if (!authStatus) {
+    // Wait until session state is loaded
+    if (isPending) return;
+
+    // If user is not logged in via BetterAuth session, redirect to signin
+    if (!session?.user) {
       router.push("/signin");
       return;
     }
@@ -30,9 +36,9 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
         console.error("Error fetching product details:", err);
         setLoading(false);
       });
-  }, [slug, router]);
+  }, [slug, router, session, isPending]);
 
-  if (loading) {
+  if (loading || isPending) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-6">
         <div className="h-40 bg-gray-100 rounded-xl animate-pulse"></div>
@@ -44,9 +50,9 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
   if (!product || !product.nameBn) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-20 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-gray-800">পণ্যটি পাওয়া যায়নি</h2>
+        <h2 className="text-2xl font-bold text-gray-800">ponyti paoa jayni</h2>
         <Link href="/" className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-medium inline-block shadow-sm">
-          হোম পেজে ফিরে যান
+          home peje fire jan
         </Link>
       </div>
     );
@@ -66,10 +72,10 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
 
   const formatUnit = (u: string) => {
     switch (u) {
-      case "kg": return "কেজি";
-      case "litre": return "লিটার";
-      case "dozen": return "ডজন";
-      case "piece": return "পিস";
+      case "kg": return "keji";
+      case "litre": return "litar";
+      case "dozen": return "dojon";
+      case "piece": return "pis";
       default: return u;
     }
   };
@@ -86,7 +92,7 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
       <div className="text-xs text-gray-500 flex items-center gap-2">
-        <Link href="/" className="hover:text-emerald-600">হোম</Link>
+        <Link href="/" className="hover:text-emerald-600">home</Link>
         <span>/</span>
         <span className="text-gray-800 font-medium">{product.nameBn}</span>
       </div>
@@ -99,12 +105,12 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
               {product.categoryNameBn || product.category}
             </span>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.nameBn}</h1>
-            <p className="text-sm text-gray-500">প্রতি {formatUnit(product.unit)}</p>
+            <p className="text-sm text-gray-500">proti {formatUnit(product.unit)}</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500">আজকের গড় মূল্য</p>
-          <div className="text-2xl font-bold text-gray-900">{product.today} টাকা</div>
+          <p className="text-xs text-gray-500">ajker gor mullo</p>
+          <div className="text-2xl font-bold text-gray-900">{product.today} taka</div>
           <span className={`text-xs font-semibold inline-flex items-center gap-0.5 mt-1 ${badgeColor}`}>
             {symbol} {Math.abs(pct)}%
           </span>
@@ -113,32 +119,32 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          <span className="text-xs text-gray-500">সর্বনিম্ন মূল্য</span>
-          <div className="text-lg font-bold text-emerald-700 mt-1">{minPrice} টাকা</div>
+          <span className="text-xs text-gray-500">sorbonimno mullo</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{minPrice} taka</div>
         </div>
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          <span className="text-xs text-gray-500">সর্বোচ্চ মূল্য</span>
-          <div className="text-lg font-bold text-emerald-700 mt-1">{maxPrice} টাকা</div>
+          <span className="text-xs text-gray-500">sorboccho mullo</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{maxPrice} taka</div>
         </div>
         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-          <span className="text-xs text-gray-500">গড় বাজারদর</span>
-          <div className="text-lg font-bold text-emerald-700 mt-1">{avgPrice} টাকা</div>
+          <span className="text-xs text-gray-500">gor bajar dor</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{avgPrice} taka</div>
         </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="p-4 bg-gray-50 border-b border-gray-200 font-bold text-gray-800">
-          বাজারভিত্তিক আজকের দাম
+          bajarvittik ajker dam
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50/70 border-b border-gray-200 text-xs uppercase text-gray-500">
               <tr>
-                <th className="px-6 py-3">বাজারের নাম</th>
-                <th className="px-6 py-3">স্থান</th>
-                <th className="px-6 py-3">সর্বনিম্ন মূল্য</th>
-                <th className="px-6 py-3">সর্বোচ্চ মূল্য</th>
-                <th className="px-6 py-3">অবস্থা</th>
+                <th className="px-6 py-3">bajartir nam</th>
+                <th className="px-6 py-3">sthan</th>
+                <th className="px-6 py-3">sorbonimno mullo</th>
+                <th className="px-6 py-3">sorboccho mullo</th>
+                <th className="px-6 py-3">obostha</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -147,15 +153,15 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
                   <tr key={idx} className="hover:bg-gray-50/50 transition">
                     <td className="px-6 py-4 font-medium text-gray-900">{m.market}</td>
                     <td className="px-6 py-4">{m.division}</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">{m.min} টাকা</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">{m.max} টাকা</td>
-                    <td className="px-6 py-4 text-emerald-600 font-medium">উপলব্ধ</td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">{m.min} taka</td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">{m.max} taka</td>
+                    <td className="px-6 py-4 text-emerald-600 font-medium">upolobdho</td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-6 text-center text-gray-400">
-                    বাজারভিত্তিক ডেটা উপলব্ধ নেই
+                    bajarvittik data upolobdho nei
                   </td>
                 </tr>
               )}
@@ -169,7 +175,7 @@ function ProductDetailsContent({ params }: { params: Promise<{ slug: string }> }
 
 export default function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-gray-500">লোড হচ্ছে...</div>}>
+    <Suspense fallback={<div className="p-12 text-center text-gray-500">lod hocche...</div>}>
       <ProductDetailsContent params={params} />
     </Suspense>
   );

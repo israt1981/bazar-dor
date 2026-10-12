@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Product } from "@/types";
+import { authClient } from "@/lib/auth-client";
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [banglaDate, setBanglaDate] = useState("রবিবার, ১১ অক্টোবর, ২০২৬");
+
+  const { data: session } = authClient.useSession();
 
   useEffect(() => {
     const options: Intl.DateTimeFormatOptions = {
@@ -53,9 +56,16 @@ export default function Home() {
       {/* Hero / Banner Section */}
       <section className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="space-y-4 max-w-2xl">
-          <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider">
-            {banglaDate}
-          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider">
+              {banglaDate}
+            </span>
+            {session?.user && (
+              <span className="text-xs font-medium text-emerald-800 bg-emerald-200/60 px-3 py-1 rounded-full">
+                স্বাগতম, {session.user.name} 👋
+              </span>
+            )}
+          </div>
           <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
             আজকের বাজারের দাম এক নজরে
           </h1>
@@ -65,7 +75,7 @@ export default function Home() {
           <div>
             <button
               onClick={scrollToAllProducts}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow transition"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow transition cursor-pointer"
             >
               সব পণ্য দেখুন
             </button>

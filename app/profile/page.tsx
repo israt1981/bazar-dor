@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { User, Mail, Edit } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { data: session, isPending } = authClient.useSession();
 
-  useEffect(() => {
-    const userData = localStorage.getItem("bazardor_logged_in_user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  if (isPending) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-20 text-center text-gray-500">
+        প্রোফাইল লোড হচ্ছে...
+      </div>
+    );
+  }
+
+  const currentUser = session?.user;
 
   return (
     <div className="max-w-xl mx-auto px-4 py-16">
@@ -34,7 +37,9 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-xs text-gray-400">নাম</p>
-              <p className="text-base font-semibold text-gray-800">{user?.name || "অতিথি ব্যবহারকারী"}</p>
+              <p className="text-base font-semibold text-gray-800">
+                {currentUser?.name || "অতিথি ব্যবহারকারী"}
+              </p>
             </div>
           </div>
 
@@ -44,7 +49,9 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-xs text-gray-400">ইমেইল</p>
-              <p className="text-base font-semibold text-gray-800">{user?.email || "N/A"}</p>
+              <p className="text-base font-semibold text-gray-800">
+                {currentUser?.email || "N/A"}
+              </p>
             </div>
           </div>
         </div>
