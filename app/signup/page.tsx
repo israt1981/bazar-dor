@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { authClient } from "@/lib/auth-client";
 
 interface UserType {
   name: string;
@@ -64,22 +65,19 @@ export default function SignUpPage() {
     }
   };
 
-  const handleSocialAuth = (provider: string) => {
-    setLoading(true);
-    setTimeout(() => {
+  // Real Social Authentication using BetterAuth Client SDK
+  const handleSocialAuth = async (provider: "google" | "github") => {
+    try {
+      setLoading(true);
+      await authClient.signIn.social({
+        provider: provider,
+        callbackURL: "/",
+      });
+    } catch (error) {
+      console.error("Social Auth Error:", error);
+      toast.error(`${provider} দিয়ে সাইন আপ করতে সমস্যা হয়েছে।`);
       setLoading(false);
-      const socialUser: UserType = {
-        name: `${provider} User`,
-        email: `user@${provider.toLowerCase()}.com`,
-      };
-      localStorage.setItem("bazardor_logged_in_user", JSON.stringify(socialUser));
-      localStorage.setItem("bazardor_logged_in", "true");
-
-      window.dispatchEvent(new Event("auth-change"));
-
-      toast.success(`${provider} দিয়ে সফলভাবে সাইন আপ সম্পন্ন হয়েছে!`);
-      router.push("/");
-    }, 800);
+    }
   };
 
   return (
@@ -150,17 +148,20 @@ export default function SignUpPage() {
           <div className="flex-1 border-t border-gray-200"></div>
         </div>
 
+        {/* Real Social Authentication Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => handleSocialAuth("Google")}
+            onClick={() => handleSocialAuth("google")}
+            disabled={loading}
             className="py-2.5 px-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer"
           >
             Google
           </button>
           <button
             type="button"
-            onClick={() => handleSocialAuth("GitHub")}
+            onClick={() => handleSocialAuth("github")}
+            disabled={loading}
             className="py-2.5 px-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer"
           >
             GitHub

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Suspense } from "react";
-import "./globals.css";
+import { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "বাজার দর - BazarDor",
-  description: "Essential commodity market prices in Bangladesh",
+  description: "প্রয়োজনীয় পণ্যের দাম এক নজরে",
 };
 
 export default function RootLayout({
@@ -27,13 +27,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="bn">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 flex flex-col min-h-screen`}>
-        <Suspense fallback={<div className="h-20 bg-white border-b border-gray-100" />}>
-          <Navbar />
-        </Suspense>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 min-h-screen flex flex-col`}>
+        {/* Global Toaster Container */}
+        <Toaster position="top-center" reverseOrder={false} />
         
-        <main className="grow">{children}</main>
-        
+        <Navbar />
+        <main className="flex-grow">{children}</main>
         <Footer />
       </body>
     </html>

@@ -4,21 +4,23 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { authClient } from "@/lib/auth-client";
 
 export default function UpdateProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const userData = localStorage.getItem("bazardor_logged_in_user");
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      setName(parsed.name || "");
-    }
-  }, []);
+  // BetterAuth session hook to get current user details
+  const { data: session } = authClient.useSession();
 
-  const handleUpdate = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (session?.user?.name) {
+      setName(session.user.name);
+    }
+  }, [session]);
+
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       toast.error("নাম খালি রাখা যাবে না।");
@@ -28,24 +30,23 @@ export default function UpdateProfilePage() {
     setLoading(true);
 
     try {
-      const userData = localStorage.getItem("bazardor_logged_in_user");
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        const updatedUser = { ...parsed, name };
-        
-        // Update session storage
-        localStorage.setItem("bazardor_logged_in_user", JSON.stringify(updatedUser));
-        
-        // Dispatch auth change so Navbar reflects new name instantly
-        window.dispatchEvent(new Event("auth-change"));
-      }
-
-      setLoading(false);
-      toast.success("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
-      router.push("/profile");
+      await authClient.updateUser({
+        name: name,
+      }, {
+        onSuccess: () => {
+          setLoading(false);
+          toast.success("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
+          router.push("/profile");
+          router.refresh();
+        },
+        onError: (ctx) => {
+          setLoading(false);
+          toast.error(ctx.error.message || "আপডেট করতে সমস্যা হয়েছে।");
+        }
+      });
     } catch {
       setLoading(false);
-      toast.error("আপডেট করতে সমস্যা হয়েছে।");
+      toast.error("আপডেট করতে সমস্যা হয়েছে।");
     }
   };
 
