@@ -6,12 +6,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
-interface UserType {
-  name: string;
-  email: string;
-  password?: string;
-}
-
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,40 +16,36 @@ export default function SignInPage() {
     e.preventDefault();
 
     if (!email || !password) {
-      toast.error("দয়া করে ইমেইল এবং পাসওয়ার্ড প্রদান করুন।");
+      toast.error("দয়া করে ইমেইল এবং পাসওয়ার্ড প্রদান করুন।");
       return;
     }
 
     setLoading(true);
 
     try {
-      const existingUsers: UserType[] = JSON.parse(
-        localStorage.getItem("bazardor_users") || "[]"
-      );
-      const foundUser = existingUsers.find(
-        (u: UserType) => u.email === email && u.password === password
-      );
+      // Better-Auth এর মাধ্যমে রিয়েল সাইন-ইন রিকোয়েস্ট পাঠানো
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+      });
 
-      if (foundUser) {
-        localStorage.setItem("bazardor_logged_in", "true");
-        localStorage.setItem("bazardor_logged_in_user", JSON.stringify(foundUser));
-        
-        window.dispatchEvent(new Event("auth-change"));
-
+      if (error) {
         setLoading(false);
-        toast.success(`স্বাগতম, ${foundUser.name}! সফলভাবে লগইন হয়েছে।`);
-        router.push("/");
-      } else {
-        setLoading(false);
-        toast.error("ভুল ইমেইল অথবা পাসওয়ার্ড! সঠিক তথ্য দিন বা সাইন আপ করুন।");
+        toast.error(error.message || "ভুল ইমেইল অথবা পাসওয়ার্ড!");
+        return;
       }
-    } catch {
+
       setLoading(false);
-      toast.error("লগইন করতে সমস্যা হয়েছে।");
+      toast.success("সফলভাবে লগইন হয়েছে।");
+      router.refresh();
+      router.push("/");
+    } catch (err) {
+      console.error("Login error:", err);
+      setLoading(false);
+      toast.error("লগইন করতে সমস্যা হয়েছে।");
     }
   };
 
-  // Real Social Authentication using BetterAuth Client SDK
   const handleSocialAuth = async (provider: "google" | "github") => {
     try {
       setLoading(true);
@@ -65,7 +55,7 @@ export default function SignInPage() {
       });
     } catch (error) {
       console.error("Social Auth Error:", error);
-      toast.error(`${provider} দিয়ে লগইন করতে সমস্যা হয়েছে।`);
+      toast.error(`${provider} দিয়ে লগইন করতে সমস্যা হয়েছে।`);
       setLoading(false);
     }
   };
@@ -91,7 +81,7 @@ export default function SignInPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
             <input
               type="password"
               value={password}
@@ -116,7 +106,6 @@ export default function SignInPage() {
           <div className="flex-1 border-t border-gray-200"></div>
         </div>
 
-        {/* Real Social Authentication Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
