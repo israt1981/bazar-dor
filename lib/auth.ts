@@ -5,7 +5,9 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: ["https://mellifluous-halva-bb6954.netlify.app"],
   
-  // ১. ইমেইল এবং পাসওয়ার্ড অথেন্টিকেশন এনাবল করার জন্য এটি যুক্ত করতে হবে
+  // নেটলিফাইয়ের মতো সার্ভারলেস হোস্টিংয়ে কুকি কাজ করানোর জন্য এটি যুক্ত করা হলো
+  trustHost: true,
+  
   emailAndPassword: {
     enabled: true,
   },
