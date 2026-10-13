@@ -1,0 +1,7 @@
+[build]
+command = "npm run build"
+
+[secrets_scanning]
+omit_keys = ["BETTER_AUTH_URL"]
+[build.environment]
+SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_URL"
