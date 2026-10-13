@@ -6,12 +6,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
-interface UserType {
-  name: string;
-  email: string;
-  password?: string;
-}
-
 export default function SignUpPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -20,52 +14,51 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || !email || !password || !confirmPassword) {
-      toast.error("দয়া করে সব ফিল্ড সঠিকভাবে পূরণ করুন।");
+      toast.error("দয়া করে সব ফিল্ড সঠিকভাবে পূরণ করুন।");
       return;
     }
 
     if (password.length < 8) {
-      toast.error("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
+      toast.error("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("পাসওয়ার্ড মিলছে না!");
+      toast.error("পাসওয়ার্ড মিলছে না!");
       return;
     }
 
     setLoading(true);
 
     try {
-      const existingUsers: UserType[] = JSON.parse(
-        localStorage.getItem("bazardor_users") || "[]"
-      );
-      
-      const userExists = existingUsers.some((u: UserType) => u.email === email);
-      if (userExists) {
-        toast.error("এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে!");
+      // Better-Auth এর মাধ্যমে রিয়েল ডাটাবেজে সাইন-আপ রিকোয়েস্ট পাঠানো
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+
+      if (error) {
+        toast.error(error.message || "রেজিস্ট্রেশনে সমস্যা হয়েছে।");
         setLoading(false);
         return;
       }
 
-      const newUser: UserType = { name, email, password };
-      existingUsers.push(newUser);
-      localStorage.setItem("bazardor_users", JSON.stringify(existingUsers));
-
       setLoading(false);
-      toast.success("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! অনুগ্রহ করে সাইন ইন করুন।");
-      router.push("/signin");
-    } catch {
+      toast.success("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!");
+      router.refresh();
+      router.push("/");
+    } catch (err) {
+      console.error("Sign up error:", err);
       setLoading(false);
-      toast.error("রেজিস্ট্রেশনে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      toast.error("রেজিস্ট্রেশনে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
     }
   };
 
-  // Real Social Authentication using BetterAuth Client SDK
   const handleSocialAuth = async (provider: "google" | "github") => {
     try {
       setLoading(true);
@@ -75,7 +68,7 @@ export default function SignUpPage() {
       });
     } catch (error) {
       console.error("Social Auth Error:", error);
-      toast.error(`${provider} দিয়ে সাইন আপ করতে সমস্যা হয়েছে।`);
+      toast.error(`${provider} দিয়ে সাইন আপ করতে সমস্যা হয়েছে।`);
       setLoading(false);
     }
   };
@@ -112,7 +105,7 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
             <input
               type="password"
               value={password}
@@ -123,7 +116,7 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড নিশ্চিত করুন</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">পাসওয়ার্ড নিশ্চিত করুন</label>
             <input
               type="password"
               value={confirmPassword}
@@ -148,7 +141,6 @@ export default function SignUpPage() {
           <div className="flex-1 border-t border-gray-200"></div>
         </div>
 
-        {/* Real Social Authentication Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
