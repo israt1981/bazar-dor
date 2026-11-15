@@ -1,13 +1,20 @@
 import { betterAuth } from "better-auth";
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { getMongoClient, getMongoDb } from "@/lib/mongodb";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "https://mellifluous-halva-bb6954.netlify.app",
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: ["https://mellifluous-halva-bb6954.netlify.app"],
-  
+
   // নেটলিফাইয়ের মতো সার্ভারলেস হোস্টিংয়ে কুকি কাজ করানোর জন্য এটি যুক্ত করা হলো
   trustHost: true,
-  
+
+  database: mongodbAdapter(getMongoDb(), {
+    client: getMongoClient(),
+    transaction: true,
+  }),
+
   emailAndPassword: {
     enabled: true,
   },
